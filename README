@@ -1,0 +1,49 @@
+Individual Project
+
+How to run?
+-----------
+
+On running make, three executables will be generated - server, lock_sample, dsm_sample
+To run the server just type - ./server
+To run any client type - ./client <local-ip> <list of rest ips>...
+
+Every client communicates only with the local server.
+
+Every client should first call psu_init_lock_mgr for all tasks.
+
+For the distributed lock, all servers maintain a database of locks. Each lock operates
+according to the Ricart Agrawala algorithm.
+
+For the distributed shared memory, all servers maintain a directory containing information
+about each mallocd data segment. Shared memory (shmget, shmat) is used for sharing data
+between client and server on a machine. mprotect is used to modify the protection of the
+memory segment. M -> PROT_READ | PROT_WRITE, S -> PROT_READ, I -> PROT_NONE.
+
+What are the RPC calls?
+-----------------------
+
+1. INIT - Used by the client to initialize the local server. It lets the server know about other
+          machines in the cluster
+
+2. ACQUIRE_LOCK - Used by the client to acquire the lock with the passed lock number
+3. RELEASE_LOCK - Used by the client to release the lock with the passed lock number
+
+4. REQUEST - Sent by server to all other servers in the cluster when its clients wishes to
+             acquire the lock.
+5. REPLY - Sent by the server to the server that requested the lock. The message can be deferred
+           or sent immediately according to the Ricart-Agarwala algorithm.
+
+6. MALLOC - Sent by the client to the local server when the client wishes to allocate a distributed
+            shared memory.
+7. FREE - Sent by the client to the local server when the client wishes to free the distributed
+          shared memory.
+
+7. PREAD - Sent by the client to the local server when client wishes to read data from the mallocd
+           segment.
+8. PWRITE - Sent by the client to the local server when client wishes to write date to the mallocd
+            segment.
+
+9. NMALLOC - Sent by the server to all other servers to let them know about a newly mallocd segment.
+10. NFREE - Sent by the server to all other servers to let them know it doesn't have the data segment.
+11. NREAD - Sent by the server to another server who has the data segment
+12. NINV - Sent by the server to all other servers to invalidate their data segments.
